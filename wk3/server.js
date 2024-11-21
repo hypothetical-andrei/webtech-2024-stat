@@ -49,38 +49,49 @@ app.post('/cats', async (req, res, next) => {
     }
 })
 
-// // get a particular cat
-// app.get('/cats/:id', (req, res) => {
-//     const id = parseInt(req.params.id)
-//     const cat = cats.find(e => e.id === id)
-//     if (cat) {
-//         res.status(200).json(cat)
-//     } else {
-//         res.status(404).json({ message: 'not found' })
-//     }
-// })
+// get a particular cat
+app.get('/cats/:id', async (req, res, next) => {
+    try {
+        const cat = await Cat.findByPk(req.params.id)
+        if (cat) {
+            res.status(200).json(cat)
+        } else {
+            res.status(404).json({ message: 'not found' })
+        }
+    } catch (error) {
+        next(error)
+    }
+})
 
-// app.put('/cats/:id', (req, res) => {
-//     const id = parseInt(req.params.id)
-//     const catIndex = cats.findIndex(e => e.id === id)
-//     if (catIndex !== -1) {
-//         cats[catIndex].name = req.body.name
-//         res.status(202).json(cats[catIndex])
-//     } else {
-//         res.status(404).json({ message: 'not found' })
-//     }
-// })
+app.put('/cats/:id', async (req, res, next) => {
+    try {
+        const cat = await Cat.findByPk(req.params.id)
+        if (cat) {
+            cat.name = req.body.name
+            cat.weight = req.body.weight
+            await cat.save()
+            res.status(202).json(cat)
+        } else {
+            res.status(404).json({ message: 'not found' })
+        }
+    } catch (error) {
+        next(error)
+    }
+})
 
-// app.delete('/cats/:id', (req, res) => {
-//     const id = parseInt(req.params.id)
-//     const catIndex = cats.findIndex(e => e.id === id)
-//     if (catIndex !== -1) {
-//         cats.splice(catIndex, 1)
-//         res.status(204).json({ message: 'deleted' })
-//     } else {
-//         res.status(404).json({ message: 'not found' })
-//     }
-// })
+app.delete('/cats/:id', async (req, res, next) => {
+    try {
+        const cat = await Cat.findByPk(req.params.id)
+        if (cat) {
+            await cat.destroy()
+            res.status(204).json({})
+        } else {
+            res.status(404).json({ message: 'not found' })
+        }
+    } catch (error) {
+        next(error)
+    }
+})
 
 app.use((err, req, res, next) => {
     console.warn(err)

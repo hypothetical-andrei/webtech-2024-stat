@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="module">
+        import { reactive, html } from 'https://esm.sh/@arrow-js/core'
+        import dataStore from './data-store.mjs'
+
+        window.onload = async () => {
+            const root = document.getElementById('root')
+            const store = dataStore.store
+
+            const data = reactive({
+                counter: 0,
+                itemList: [],
+                itemCandidate: {
+                    name: '',
+                    weight: 0
+                }
+            })
+
+            await store.getAll()
+            data.itemList = store.data
+
+            const counterContainer = html`
+                <div>
+                    <div>
+                        ${() => data.counter}
+                    </div>
+                    <div>
+                        <input type=button value=increment @click="${() => data.counter++}" />
+                    </div>
+                </div>
+            `
+
+            const itemList = html`
+                <h1>List of cats</h1>
+                ${
+                    () => data.itemList.map(e => {
+                        return html`
+                            <div>
+                                Cat ${e.name} weighs ${e.weight}
+                            </div>
+                        `
+                    })
+                }
+            `
+
+            async function addItem () {
+                await store.addOne(data.itemCandidate)
+                data.itemList = store.data
+            }
+
+            const itemForm = html`
+                <div>
+                    <input type=text placeholder=name @input="${(evt) => {
+                        data.itemCandidate.name = evt.target.value
+                    }}" />
+                    <input type=text placeholder=weight @input="${(evt) => {
+                        data.itemCandidate.weight = evt.target.value
+                    }}" />
+                    <input type=button value=add @click="${(evt) => addItem()}" />
+                </div>
+            `
+
+            const ui = html`
+                ${counterContainer}
+                ${itemList}
+                ${itemForm}
+            `
+
+            ui(root)
+
+        }
+    </script>
+</head>
+<body>
+   <div id="root"></div>
+</body>
+</html>

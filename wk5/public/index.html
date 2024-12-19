@@ -8,12 +8,16 @@
             background-color: gold;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script type="module">
         import { reactive, html } from 'https://esm.sh/@arrow-js/core'
         import dataStore from './data-store.mjs'
 
         window.onload = async () => { 
             const root = document.getElementById('root')
+            const viz = document.getElementById('viz')
+
             const store = dataStore.store
 
             const data = reactive({
@@ -22,11 +26,25 @@
                 recordCandidate: {
                     station: '',
                     level: 0
+                },
+                chart: {
+                    labels: [],
+                    dataSets: []
                 }
             })
 
             await store.getAll()
             data.recordList = store.data
+
+            const chart = new Chart(viz, {
+                type: 'line',
+                data: {
+                    labels: data.chart.labels,
+                    datasets: data.chart.dataSets
+                }
+            })
+
+            
 
             const counterContainer = html`
                 <div>
@@ -78,6 +96,7 @@
     </script>
 </head>
 <body>
+    <canvas id="viz" />
     <div id="root" />
 </body>
 </html>

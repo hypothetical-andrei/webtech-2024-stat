@@ -1,0 +1,83 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .temperature-item {
+            background-color: gold;
+        }
+    </style>
+    <script type="module">
+        import { reactive, html } from 'https://esm.sh/@arrow-js/core'
+        import dataStore from './data-store.mjs'
+
+        window.onload = async () => { 
+            const root = document.getElementById('root')
+            const store = dataStore.store
+
+            const data = reactive({
+                counter: 0,
+                recordList: [],
+                recordCandidate: {
+                    station: '',
+                    level: 0
+                }
+            })
+
+            await store.getAll()
+            data.recordList = store.data
+
+            const counterContainer = html`
+                <div>
+                    <div>
+                        ${() => data.counter}
+                    </div>
+                    <div>
+                        <input type=button value=increment @click="${() => data.counter++}" />
+                    </div>
+                <div>
+            `
+
+            const temperatureRecords = html`
+                <h1>List of records</h1>
+                ${() => data.recordList.map(e => {
+                    return html`
+                        <div class="temperature-item">
+                            For station ${e.station} level ${e.level}
+                        </div>
+                    `
+                })}
+            `
+
+            async function addItem () {
+                await store.addOne(data.recordCandidate)
+                data.recordList = store.data
+            }
+
+            const temperatureRecordForm = html`
+                <div>
+                    <input type="text" placeholder="station" @input="${(evt) => {
+                        data.recordCandidate.station = evt.target.value
+                    }}" />
+                    <input type="text" placeholder="level" @input="${(evt) => {
+                        data.recordCandidate.level = evt.target.value
+                    }}" />
+                    <input type="button" value="add" @click="${(evt) => addItem()}" />
+                </div>
+            `
+
+            const ui = html`
+                ${counterContainer}
+                ${temperatureRecords}
+                ${temperatureRecordForm}
+            `
+
+            ui(root)
+        }
+    </script>
+</head>
+<body>
+    <div id="root" />
+</body>
+</html>

@@ -22,6 +22,7 @@
 
             const data = reactive({
                 counter: 0,
+                selected: -1,
                 recordList: [],
                 recordCandidate: {
                     station: '',
@@ -44,33 +45,109 @@
                 }
             })
 
-            
+            function drawChart() {
+                const dataSets = []
+                const labels = []
+                const existingStations = new Set()
+                for (const record of data.recordList) {
+                    if (!existingStations.has(record.station)) {
+                        existingStations.add(record.station)
+                        dataSets.push({
+                            label: record.station,
+                            data: [record.level]
+                        })
+                    } else {
+                        const index = dataSets.findIndex(e => e.label === record.station)
+                        dataSets[index].data.push(record.level)
+                    }
+                }
+                const dataSetLengths = dataSets.map(e => e.data.length)
+                const maxLength = Math.max(...dataSetLengths)
+                for (let i = 0; i < maxLength; i++) {
+                    labels.push(`Moment ${i}`)
+                }
+                data.chart.labels = labels
+                data.chart.dataSets = dataSets
+                chart.data.labels = data.chart.labels
+                chart.data.datasets = data.chart.dataSets
 
-            const counterContainer = html`
-                <div>
-                    <div>
-                        ${() => data.counter}
-                    </div>
-                    <div>
-                        <input type=button value=increment @click="${() => data.counter++}" />
-                    </div>
-                <div>
-            `
+                chart.update()
+            }
+
+            drawChart()
+
+            // const counterContainer = html`
+            //     <div>
+            //         <div>
+            //             ${() => data.counter}
+            //         </div>
+            //         <div>
+            //             <input type=button value=increment @click="${() => data.counter++}" />
+            //         </div>
+            //     <div>
+            // `
 
             const temperatureRecords = html`
-                <h1>List of records</h1>
+                <h1>List of records, selected ${() => data.selected}</h1>
+                
                 ${() => data.recordList.map(e => {
-                    return html`
-                        <div class="temperature-item">
-                            For station ${e.station} level ${e.level}
-                        </div>
-                    `
+                    if (e.id === data.selected) {
+                        return html`
+                            <div>
+                                <div>
+                                    <input type="text" placeholder="station" @input="${(evt) => {
+                                        data.recordCandidate.station = evt.target.value
+                                    }}" value="${() => data.recordCandidate.station}"/>
+                                    <input type="text" placeholder="level" @input="${(evt) => {
+                                        data.recordCandidate.level = evt.target.value
+                                    }}" value="${data.recordCandidate.level}" />
+                                </div>
+                                <span>
+                                    <input type="button" value="cancel" @click="${() => {
+                                        data.selected = -1
+                                    }}"/>
+                                    <input type="button" value="save" @click="${() => saveItem(e.id)}" />
+                                </span>
+
+                            </div>
+                        `
+                    } else {
+                        return html`
+                            <div class="temperature-item">
+                                For station ${e.station} level ${e.level}
+                                <span>
+                                    <input type="button" value="delete" @click="${() => {
+                                        deleteItem(e.id)
+                                    }}"/>
+                                    <input type="button" value="edit" @click="${() => {
+                                        data.selected = e.id
+                                        data.recordCandidate.station = e.station
+                                        data.recordCandidate.level = e.level
+                                    }}"/>
+                                </span>
+                            </div>
+                        `
+                    }
                 })}
             `
 
             async function addItem () {
                 await store.addOne(data.recordCandidate)
                 data.recordList = store.data
+                drawChart()
+            }
+
+            async function deleteItem (id) {
+                await store.deleteOne(id)
+                data.recordList = store.data
+                drawChart()
+            }
+
+            async function saveItem (id) {
+                await store.saveOne(id, data.recordCandidate)
+                data.recordList = store.data
+                data.selected = -1
+                drawChart()
             }
 
             const temperatureRecordForm = html`
@@ -84,9 +161,9 @@
                     <input type="button" value="add" @click="${(evt) => addItem()}" />
                 </div>
             `
+            // ${counterContainer}
 
             const ui = html`
-                ${counterContainer}
                 ${temperatureRecords}
                 ${temperatureRecordForm}
             `
@@ -96,7 +173,8 @@
     </script>
 </head>
 <body>
-    <canvas id="viz" />
     <div id="root" />
+    <h1>Chart</h1>
+    <canvas id="viz"></canvas>
 </body>
 </html>
